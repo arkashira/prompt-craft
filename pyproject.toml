@@ -3,7 +3,7 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
-name = "template-api"
+name = "prompt-craft"
 version = "1.0.0"
 description = ""
 

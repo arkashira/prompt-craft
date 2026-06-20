@@ -1,13 +1,6 @@
-# Template API
-
-A simple API for creating and retrieving templates.
+# Prompt Craft
+A simple project for managing prompt templates.
 
 ## Usage
-
-1. Generate a token using the `AuthService`.
-2. Use the token to create a template using the `API`.
-3. Retrieve the template using the `API`.
-
-## Testing
-
-Run the tests using `pytest`.
+1. Run `python -m pytest` to run the tests.
+2. Run `python src/prompt_craft.py` to run the main program.
