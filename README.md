@@ -1,6 +1,11 @@
-# Prompt Craft
-A simple project for managing prompt templates.
+# Template API
+
+A simple REST API for creating templates.
 
 ## Usage
-1. Run `python -m pytest` to run the tests.
-2. Run `python src/prompt_craft.py` to run the main program.
+
+1. Run the API using `python -m src.template`.
+2. Use a tool like `curl` to send a POST request to the API with a JSON payload containing the template name and content.
+3. The API will return the created template with an ID.
+
+## Example

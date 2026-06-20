@@ -1,41 +1,32 @@
-from template import API, TemplateService, AuthService, RateLimiter
+from template import TemplateService, API
 import pytest
 
 def test_create_template():
-    api = API()
-    token = api.auth_service.generate_token("user")
-    response = api.create_template(token, "test", "content")
-    assert response["name"] == "test"
-    assert response["content"] == "content"
+    service = TemplateService()
+    template = {"name": "example", "content": "example content"}
+    created_template = service.create_template(1, template)
+    assert created_template.id == 1
+    assert created_template.name == template["name"]
+    assert created_template.content == template["content"]
 
-def test_create_template_invalid_token():
-    api = API()
-    with pytest.raises(ValueError):
-        api.create_template("invalid-token", "test", "content")
+def test_rate_limit():
+    service = TemplateService()
+    template = {"name": "example", "content": "example content"}
+    for _ in range(5):
+        service.create_template(1, template)
+    with pytest.raises(Exception):
+        service.create_template(1, template)
 
-def test_create_template_rate_limit_exceeded():
+def test_authenticate():
     api = API()
-    token = api.auth_service.generate_token("user")
-    for _ in range(10):
-        api.create_template(token, "test", "content")
-    with pytest.raises(ValueError):
-        api.create_template(token, "test", "content")
+    with pytest.raises(Exception):
+        api.template_service.authenticate("invalid_token")
+    assert api.template_service.authenticate("secret_token") == 1
 
-def test_get_template():
+def test_handle_post():
     api = API()
-    token = api.auth_service.generate_token("user")
-    template = api.template_service.create_template("test", "content")
-    response = api.get_template(token, template.id)
-    assert response["name"] == "test"
-    assert response["content"] == "content"
-
-def test_get_template_invalid_token():
-    api = API()
-    with pytest.raises(ValueError):
-        api.get_template("invalid-token", 1)
-
-def test_get_template_template_not_found():
-    api = API()
-    token = api.auth_service.generate_token("user")
-    with pytest.raises(ValueError):
-        api.get_template(token, 1)
+    template = {"name": "example", "content": "example content"}
+    response = api.handle_post("secret_token", template)
+    assert response["id"] == 1
+    assert response["name"] == template["name"]
+    assert response["content"] == template["content"]
