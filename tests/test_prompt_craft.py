@@ -1,48 +1,44 @@
 import pytest
-from prompt_craft import PromptCraft, Commit
-from datetime import datetime
+from prompt_craft import PromptCraft, Template
 
-@pytest.fixture
-def prompt_craft():
-    return PromptCraft()
+def test_list_templates():
+    craft = PromptCraft("api_token")
+    templates = craft.list_templates()
+    assert len(templates) == 2
+    assert templates[0].id == 1
+    assert templates[0].title == "Template 1"
+    assert templates[0].version == "1.0"
 
-def test_add_commit(prompt_craft):
-    commit = Commit("1", datetime(2022, 1, 1), "John", "Hello World")
-    prompt_craft.add_commit(commit)
-    assert len(prompt_craft.get_commits()) == 1
+def test_to_json():
+    craft = PromptCraft("api_token")
+    craft.templates = [
+        Template(1, "Template 1", "1.0"),
+        Template(2, "Template 2", "2.0"),
+    ]
+    json_data = craft.to_json()
+    assert json_data == '[{"id": 1, "title": "Template 1", "version": "1.0"}, {"id": 2, "title": "Template 2", "version": "2.0"}]'
 
-def test_get_commits(prompt_craft):
-    commit1 = Commit("1", datetime(2022, 1, 1), "John", "Hello World")
-    commit2 = Commit("2", datetime(2022, 1, 2), "Jane", "Hello Universe")
-    prompt_craft.add_commit(commit1)
-    prompt_craft.add_commit(commit2)
-    commits = prompt_craft.get_commits()
-    assert len(commits) == 2
-    assert commits[0].id == "1"
-    assert commits[1].id == "2"
+def test_main_list():
+    import sys
+    import io
+    import argparse
+    from unittest.mock import patch
+    from prompt_craft import main
+    with patch("sys.argv", ["prompt_craft", "list", "--api-token", "api_token"]):
+        with patch("sys.stdout", new=io.StringIO()) as fake_stdout:
+            main()
+    assert fake_stdout.getvalue().strip() == '[{"id": 1, "title": "Template 1", "version": "1.0"}, {"id": 2, "title": "Template 2", "version": "2.0"}]'
 
-def test_get_diff(prompt_craft):
-    commit1 = Commit("1", datetime(2022, 1, 1), "John", "Hello World")
-    commit2 = Commit("2", datetime(2022, 1, 2), "Jane", "Hello Universe")
-    diff = prompt_craft.get_diff(commit1, commit2)
-    assert diff == "Diff between Hello World and Hello Universe"
-
-def test_rollback(prompt_craft):
-    commit1 = Commit("1", datetime(2022, 1, 1), "John", "Hello World")
-    commit2 = Commit("2", datetime(2022, 1, 2), "Jane", "Hello Universe")
-    prompt_craft.add_commit(commit1)
-    prompt_craft.add_commit(commit2)
-    prompt_craft.rollback(commit1)
-    commits = prompt_craft.get_commits()
-    assert len(commits) == 1
-    assert commits[0].id == "1"
-
-def test_get_history(prompt_craft):
-    commit1 = Commit("1", datetime(2022, 1, 1), "John", "Hello World")
-    commit2 = Commit("2", datetime(2022, 1, 2), "Jane", "Hello Universe")
-    prompt_craft.add_commit(commit1)
-    prompt_craft.add_commit(commit2)
-    history = prompt_craft.get_history()
-    assert len(history) == 2
-    assert history[0]["id"] == "1"
-    assert history[1]["id"] == "2"
+def test_main_error():
+    import sys
+    import io
+    import argparse
+    from unittest.mock import patch
+    from prompt_craft import main
+    with patch("sys.argv", ["prompt_craft", "list", "--api-token", "api_token"]):
+        with patch("prompt_craft.PromptCraft.list_templates", side_effect=Exception("Test error")):
+            with patch("sys.stderr", new=io.StringIO()) as fake_stderr:
+                with patch("sys.exit") as exit_mock:
+                    main()
+    assert fake_stderr.getvalue().strip() == "Error: Test error"
+    exit_mock.assert_called_once_with(1)
