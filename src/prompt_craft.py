@@ -1,43 +1,51 @@
-import argparse
 import json
-import sys
 from dataclasses import dataclass
+from typing import List
 
 @dataclass
-class Template:
-    id: int
-    title: str
-    version: str
+class Project:
+    name: str
+    prompts: List[str]
+
+@dataclass
+class User:
+    email: str
+    projects: List[Project]
 
 class PromptCraft:
-    def __init__(self, api_token):
-        self.api_token = api_token
-        self.templates = []
+    def __init__(self):
+        self.users = {}
+        self.free_tier_limits = {"projects": 5, "eval_calls": 10000}
 
-    def list_templates(self):
-        # Simulate API call to get templates
-        self.templates = [
-            Template(1, "Template 1", "1.0"),
-            Template(2, "Template 2", "2.0"),
-        ]
-        return self.templates
+    def create_project(self, user_email, project_name):
+        if user_email not in self.users:
+            self.users[user_email] = User(email=user_email, projects=[])
+        if len(self.users[user_email].projects) >= self.free_tier_limits["projects"]:
+            raise ValueError("Free tier project limit reached")
+        self.users[user_email].projects.append(Project(name=project_name, prompts=[]))
+        return self.users[user_email].projects[-1]
 
-    def to_json(self):
-        return json.dumps([{"id": t.id, "title": t.title, "version": t.version} for t in self.templates])
+    def edit_prompt(self, user_email, project_name, prompt):
+        if user_email not in self.users:
+            raise ValueError("User not found")
+        for project in self.users[user_email].projects:
+            if project.name == project_name:
+                project.prompts.append(prompt)
+                return project
+        raise ValueError("Project not found")
 
-def main():
-    parser = argparse.ArgumentParser(description="Prompt Craft CLI")
-    parser.add_argument("command", choices=["list"])
-    parser.add_argument("--api-token", required=True)
-    args = parser.parse_args()
-    craft = PromptCraft(args.api_token)
-    if args.command == "list":
-        try:
-            templates = craft.list_templates()
-            print(craft.to_json())
-        except Exception as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
+    def run_evaluation(self, user_email, project_name):
+        if user_email not in self.users:
+            raise ValueError("User not found")
+        for project in self.users[user_email].projects:
+            if project.name == project_name:
+                # Simulate evaluation
+                return {"result": "success"}
+        raise ValueError("Project not found")
 
-if __name__ == "__main__":
-    main()
+    def send_welcome_email(self, user_email):
+        # Simulate sending email
+        return {"message": "Welcome email sent"}
+
+    def get_free_tier_limits(self):
+        return self.free_tier_limits
