@@ -1,51 +1,41 @@
 import json
 from dataclasses import dataclass
-from typing import List
+from datetime import datetime
+from uuid import uuid4
 
 @dataclass
-class Project:
-    name: str
-    prompts: List[str]
-
-@dataclass
-class User:
-    email: str
-    projects: List[Project]
+class PromptTemplate:
+    id: str
+    title: str
+    description: str
+    prompt_body: str
+    created_at: str
 
 class PromptCraft:
     def __init__(self):
-        self.users = {}
-        self.free_tier_limits = {"projects": 5, "eval_calls": 10000}
+        self.templates = {}
 
-    def create_project(self, user_email, project_name):
-        if user_email not in self.users:
-            self.users[user_email] = User(email=user_email, projects=[])
-        if len(self.users[user_email].projects) >= self.free_tier_limits["projects"]:
-            raise ValueError("Free tier project limit reached")
-        self.users[user_email].projects.append(Project(name=project_name, prompts=[]))
-        return self.users[user_email].projects[-1]
+    def create_template(self, title, description, prompt_body):
+        if not title:
+            raise ValueError("Title cannot be empty")
+        if not description:
+            raise ValueError("Description cannot be empty")
+        if not prompt_body:
+            raise ValueError("Prompt body cannot be empty")
 
-    def edit_prompt(self, user_email, project_name, prompt):
-        if user_email not in self.users:
-            raise ValueError("User not found")
-        for project in self.users[user_email].projects:
-            if project.name == project_name:
-                project.prompts.append(prompt)
-                return project
-        raise ValueError("Project not found")
+        template_id = str(uuid4())
+        template = PromptTemplate(
+            id=template_id,
+            title=title,
+            description=description,
+            prompt_body=prompt_body,
+            created_at=datetime.now().isoformat()
+        )
+        self.templates[template_id] = template
+        return template
 
-    def run_evaluation(self, user_email, project_name):
-        if user_email not in self.users:
-            raise ValueError("User not found")
-        for project in self.users[user_email].projects:
-            if project.name == project_name:
-                # Simulate evaluation
-                return {"result": "success"}
-        raise ValueError("Project not found")
+    def get_template(self, template_id):
+        return self.templates.get(template_id)
 
-    def send_welcome_email(self, user_email):
-        # Simulate sending email
-        return {"message": "Welcome email sent"}
-
-    def get_free_tier_limits(self):
-        return self.free_tier_limits
+    def list_templates(self):
+        return list(self.templates.values())

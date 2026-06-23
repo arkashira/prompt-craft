@@ -1,58 +1,51 @@
-from prompt_craft import PromptCraft
+import pytest
+from src.prompt_craft import PromptCraft, PromptTemplate
 
-def test_create_project():
-    craft = PromptCraft()
-    project = craft.create_project("user@example.com", "My Project")
-    assert project.name == "My Project"
-    assert len(craft.users["user@example.com"].projects) == 1
+@pytest.fixture
+def prompt_craft():
+    return PromptCraft()
 
-def test_edit_prompt():
-    craft = PromptCraft()
-    craft.create_project("user@example.com", "My Project")
-    project = craft.edit_prompt("user@example.com", "My Project", "My Prompt")
-    assert len(project.prompts) == 1
-    assert project.prompts[0] == "My Prompt"
+def test_create_template(prompt_craft):
+    title = "Test Title"
+    description = "Test Description"
+    prompt_body = "Test Prompt Body"
+    template = prompt_craft.create_template(title, description, prompt_body)
+    assert isinstance(template, PromptTemplate)
+    assert template.title == title
+    assert template.description == description
+    assert template.prompt_body == prompt_body
+    assert template.id in prompt_craft.templates
 
-def test_run_evaluation():
-    craft = PromptCraft()
-    craft.create_project("user@example.com", "My Project")
-    result = craft.run_evaluation("user@example.com", "My Project")
-    assert result["result"] == "success"
+def test_get_template(prompt_craft):
+    title = "Test Title"
+    description = "Test Description"
+    prompt_body = "Test Prompt Body"
+    template = prompt_craft.create_template(title, description, prompt_body)
+    retrieved_template = prompt_craft.get_template(template.id)
+    assert retrieved_template == template
 
-def test_send_welcome_email():
-    craft = PromptCraft()
-    result = craft.send_welcome_email("user@example.com")
-    assert result["message"] == "Welcome email sent"
+def test_list_templates(prompt_craft):
+    title1 = "Test Title 1"
+    description1 = "Test Description 1"
+    prompt_body1 = "Test Prompt Body 1"
+    template1 = prompt_craft.create_template(title1, description1, prompt_body1)
+    title2 = "Test Title 2"
+    description2 = "Test Description 2"
+    prompt_body2 = "Test Prompt Body 2"
+    template2 = prompt_craft.create_template(title2, description2, prompt_body2)
+    templates = prompt_craft.list_templates()
+    assert len(templates) == 2
+    assert template1 in templates
+    assert template2 in templates
 
-def test_get_free_tier_limits():
-    craft = PromptCraft()
-    limits = craft.get_free_tier_limits()
-    assert limits["projects"] == 5
-    assert limits["eval_calls"] == 10000
+def test_create_template_with_empty_title(prompt_craft):
+    with pytest.raises(ValueError):
+        prompt_craft.create_template("", "Test Description", "Test Prompt Body")
 
-def test_free_tier_project_limit():
-    craft = PromptCraft()
-    for i in range(5):
-        craft.create_project("user@example.com", f"Project {i}")
-    try:
-        craft.create_project("user@example.com", "Project 6")
-        assert False, "Expected ValueError"
-    except ValueError as e:
-        assert str(e) == "Free tier project limit reached"
+def test_create_template_with_empty_description(prompt_craft):
+    with pytest.raises(ValueError):
+        prompt_craft.create_template("Test Title", "", "Test Prompt Body")
 
-def test_user_not_found():
-    craft = PromptCraft()
-    try:
-        craft.edit_prompt("unknown@example.com", "My Project", "My Prompt")
-        assert False, "Expected ValueError"
-    except ValueError as e:
-        assert str(e) == "User not found"
-
-def test_project_not_found():
-    craft = PromptCraft()
-    craft.create_project("user@example.com", "My Project")
-    try:
-        craft.edit_prompt("user@example.com", "Unknown Project", "My Prompt")
-        assert False, "Expected ValueError"
-    except ValueError as e:
-        assert str(e) == "Project not found"
+def test_create_template_with_empty_prompt_body(prompt_craft):
+    with pytest.raises(ValueError):
+        prompt_craft.create_template("Test Title", "Test Description", "")
