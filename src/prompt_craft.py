@@ -1,41 +1,42 @@
 import json
 from dataclasses import dataclass
-from datetime import datetime
-from uuid import uuid4
+from typing import List
 
 @dataclass
-class PromptTemplate:
-    id: str
-    title: str
-    description: str
-    prompt_body: str
-    created_at: str
+class Prompt:
+    text: str
+    placeholders: List[str]
 
-class PromptCraft:
+class PromptEditor:
     def __init__(self):
-        self.templates = {}
+        self.drafts = {}
 
-    def create_template(self, title, description, prompt_body):
-        if not title:
-            raise ValueError("Title cannot be empty")
-        if not description:
-            raise ValueError("Description cannot be empty")
-        if not prompt_body:
-            raise ValueError("Prompt body cannot be empty")
+    def create_draft(self, prompt: Prompt):
+        self.drafts[prompt.text] = prompt
+        return prompt
 
-        template_id = str(uuid4())
-        template = PromptTemplate(
-            id=template_id,
-            title=title,
-            description=description,
-            prompt_body=prompt_body,
-            created_at=datetime.now().isoformat()
-        )
-        self.templates[template_id] = template
-        return template
+    def autosave_draft(self, prompt: Prompt):
+        self.drafts[prompt.text] = prompt
+        return prompt
 
-    def get_template(self, template_id):
-        return self.templates.get(template_id)
+    def lint(self, prompt: Prompt):
+        errors = []
+        if not prompt.placeholders:
+            errors.append("Missing placeholders")
+        if len(prompt.placeholders) != len(set(prompt.placeholders)):
+            errors.append("Duplicate keys")
+        if not prompt.text:
+            errors.append("Empty prompt")
+        if "{" not in prompt.text or "}" not in prompt.text:
+            errors.append("Invalid syntax")
+        if len(prompt.placeholders) > 10:
+            errors.append("Too many placeholders")
+        return errors
 
-    def list_templates(self):
-        return list(self.templates.values())
+    def sync_to_repo(self, prompt: Prompt):
+        # Simulate syncing to repo
+        return prompt
+
+def syntax_highlighting(prompt: Prompt):
+    highlighted_text = prompt.text.replace("{", "<span style='color: blue'>{</span>").replace("}", "<span style='color: blue'>}</span>")
+    return highlighted_text

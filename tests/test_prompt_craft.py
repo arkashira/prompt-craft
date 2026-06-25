@@ -1,51 +1,41 @@
-import pytest
-from src.prompt_craft import PromptCraft, PromptTemplate
+from prompt_craft import Prompt, PromptEditor, syntax_highlighting
 
-@pytest.fixture
-def prompt_craft():
-    return PromptCraft()
+def test_create_draft():
+    editor = PromptEditor()
+    prompt = Prompt("Hello {name}", ["name"])
+    created_prompt = editor.create_draft(prompt)
+    assert created_prompt.text == "Hello {name}"
+    assert created_prompt.placeholders == ["name"]
 
-def test_create_template(prompt_craft):
-    title = "Test Title"
-    description = "Test Description"
-    prompt_body = "Test Prompt Body"
-    template = prompt_craft.create_template(title, description, prompt_body)
-    assert isinstance(template, PromptTemplate)
-    assert template.title == title
-    assert template.description == description
-    assert template.prompt_body == prompt_body
-    assert template.id in prompt_craft.templates
+def test_autosave_draft():
+    editor = PromptEditor()
+    prompt = Prompt("Hello {name}", ["name"])
+    autosaved_prompt = editor.autosave_draft(prompt)
+    assert autosaved_prompt.text == "Hello {name}"
+    assert autosaved_prompt.placeholders == ["name"]
 
-def test_get_template(prompt_craft):
-    title = "Test Title"
-    description = "Test Description"
-    prompt_body = "Test Prompt Body"
-    template = prompt_craft.create_template(title, description, prompt_body)
-    retrieved_template = prompt_craft.get_template(template.id)
-    assert retrieved_template == template
+def test_lint():
+    editor = PromptEditor()
+    prompt = Prompt("Hello {name}", ["name"])
+    errors = editor.lint(prompt)
+    assert not errors
 
-def test_list_templates(prompt_craft):
-    title1 = "Test Title 1"
-    description1 = "Test Description 1"
-    prompt_body1 = "Test Prompt Body 1"
-    template1 = prompt_craft.create_template(title1, description1, prompt_body1)
-    title2 = "Test Title 2"
-    description2 = "Test Description 2"
-    prompt_body2 = "Test Prompt Body 2"
-    template2 = prompt_craft.create_template(title2, description2, prompt_body2)
-    templates = prompt_craft.list_templates()
-    assert len(templates) == 2
-    assert template1 in templates
-    assert template2 in templates
+    prompt = Prompt("Hello", [])
+    errors = editor.lint(prompt)
+    assert "Missing placeholders" in errors
 
-def test_create_template_with_empty_title(prompt_craft):
-    with pytest.raises(ValueError):
-        prompt_craft.create_template("", "Test Description", "Test Prompt Body")
+    prompt = Prompt("Hello {name} {name}", ["name", "name"])
+    errors = editor.lint(prompt)
+    assert "Duplicate keys" in errors
 
-def test_create_template_with_empty_description(prompt_craft):
-    with pytest.raises(ValueError):
-        prompt_craft.create_template("Test Title", "", "Test Prompt Body")
+def test_syntax_highlighting():
+    prompt = Prompt("Hello {name}", ["name"])
+    highlighted_text = syntax_highlighting(prompt)
+    assert highlighted_text == "Hello <span style='color: blue'>{</span>name<span style='color: blue'>}</span>"
 
-def test_create_template_with_empty_prompt_body(prompt_craft):
-    with pytest.raises(ValueError):
-        prompt_craft.create_template("Test Title", "Test Description", "")
+def test_sync_to_repo():
+    editor = PromptEditor()
+    prompt = Prompt("Hello {name}", ["name"])
+    synced_prompt = editor.sync_to_repo(prompt)
+    assert synced_prompt.text == "Hello {name}"
+    assert synced_prompt.placeholders == ["name"]
